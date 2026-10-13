@@ -1,12 +1,14 @@
+
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = 'abdieeuh/simple-app'
         REGISTRY = 'https://index.docker.io/v1/'
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
-        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        DOCKER_HOST = "unix:///var/run/docker.sock"
+        DOCKER_EXE = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -14,27 +16,42 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Check Docker') {
             steps {
-                script {
-                    echo 'Membangun Docker image...'
-                    docker.build("${IMAGE_NAME}:${env.BUILD_NUMBER}")
-                    echo "Image berhasil dibuat: ${IMAGE_NAME}:${env.BUILD_NUMBER}"
-                }
+                bat '"%DOCKER_EXE%" --version'
+                bat '"%DOCKER_EXE%" info'
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                bat '"%DOCKER_EXE%" build -t %IMAGE_NAME%:%BUILD_NUMBER% .'
+                echo 'Image berhasil dibuat.'
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
-                script {
-                    echo 'Push image ke Docker Hub...'
-                    docker.withRegistry(REGISTRY, REGISTRY_CREDENTIALS) {
-                        docker.image("${IMAGE_NAME}:${env.BUILD_NUMBER}").push()
-                        docker.image("${IMAGE_NAME}:${env.BUILD_NUMBER}").push('latest')
-                    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    bat '''
+                        "%DOCKER_EXE%" login -u "%DOCKER_USER%" --password-stdin
+                    ''' 
+                    bat 'echo %DOCKER_PASS% | "%DOCKER_EXE%" login -u "%DOCKER_USER%" --password-stdin'
+                    bat '"%DOCKER_EXE%" push %IMAGE_NAME%:%BUILD_NUMBER%'
+                    bat '"%DOCKER_EXE%" tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest'
+                    bat '"%DOCKER_EXE%" push %IMAGE_NAME%:latest'
                 }
             }
         }
     }
+
     post {
         always {
             echo 'Selesai build 🏁OYYY'
