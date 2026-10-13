@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -40,9 +39,6 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    bat '''
-                        "%DOCKER_EXE%" login -u "%DOCKER_USER%" --password-stdin
-                    ''' 
                     bat 'echo %DOCKER_PASS% | "%DOCKER_EXE%" login -u "%DOCKER_USER%" --password-stdin'
                     bat '"%DOCKER_EXE%" push %IMAGE_NAME%:%BUILD_NUMBER%'
                     bat '"%DOCKER_EXE%" tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest'
