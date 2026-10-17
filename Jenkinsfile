@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'abdieeuh/simple-app'
+        IMAGE_NAME = 'citrafadillahagung/simple-app'
         REGISTRY = 'https://index.docker.io/v1/'
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         DOCKER_EXE = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
@@ -39,7 +39,7 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    bat 'echo %DOCKER_PASS% | "%DOCKER_EXE%" login -u "%DOCKER_USER%" --password-stdin'
+                    bat '"%DOCKER_EXE%" login -u "%DOCKER_USER%" -p "%DOCKER_PASS%"'
                     bat '"%DOCKER_EXE%" push %IMAGE_NAME%:%BUILD_NUMBER%'
                     bat '"%DOCKER_EXE%" tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest'
                     bat '"%DOCKER_EXE%" push %IMAGE_NAME%:latest'
